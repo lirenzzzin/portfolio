@@ -1284,6 +1284,8 @@ body[data-webgl="on"] [data-ink="on"] > .ink-text-content{
       botoes[j].setAttribute("aria-pressed", botoes[j].getAttribute("data-lang") === lang ? "true" : "false");
     }
     try{ localStorage.setItem("lang", lang); }catch(e){}
+    /* avisa o main.js pra re-traduzir o botão SOM/MUDO (texto é setado por JS, fora do i18n) */
+    window.dispatchEvent(new CustomEvent("i18n-mudou", { detail: lang }));
   }
 
   for(i=0;i<botoes.length;i++){

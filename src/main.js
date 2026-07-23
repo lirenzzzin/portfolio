@@ -6,21 +6,12 @@ const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Retorno tátil por letra enquanto o nome é digitado.
 // Android/Chrome: Vibration API (funciona após um gesto do usuário — ex.: o replay ⟲).
-// iOS/Safari: NÃO expõe Vibration API na web (a Apple bloqueia). Tentamos o truque do
-// <input switch> (Safari 17.4+), mas é best-effort e pode simplesmente não vibrar.
-let iosHaptic = null;
-if (typeof navigator !== 'undefined' && !('vibrate' in navigator) && document.body) {
-  const lbl = document.createElement('label');
-  lbl.setAttribute('aria-hidden', 'true');
-  lbl.style.cssText = 'position:absolute;left:-9999px;width:0;height:0;overflow:hidden';
-  lbl.innerHTML = '<input type="checkbox" switch tabindex="-1">';
-  document.body.appendChild(lbl);
-  iosHaptic = lbl;
-}
+// iOS/Safari: SEM caminho. Não há Vibration API na web, e o único truque conhecido
+// (<input switch>, iOS 17.4+) só dispara em toque real do usuário — não serve pra
+// digitação automática — e a Apple o corrigiu no iOS 26.5. Então iPhone fica sem tátil.
 function haptic() {
   if (reduced) return;
-  if (navigator.vibrate) { navigator.vibrate(7); return; }
-  if (iosHaptic) { try { iosHaptic.click(); } catch (e) { /* noop */ } }
+  if (navigator.vibrate) navigator.vibrate(7);
 }
 
 // Áudio: prepara buffers e libera no primeiro gesto (reduced-motion não afeta áudio,
@@ -66,9 +57,12 @@ if (replayBtn) {
 const somBtn = document.querySelector('[data-audio-toggle]');
 function pintarSom() {
   const m = isMuted();
-  somBtn.textContent = m ? 'MUDO' : 'SOM';
+  const en = (document.documentElement.lang || '').slice(0, 2) === 'en';
+  somBtn.textContent = en ? (m ? 'MUTED' : 'SOUND') : (m ? 'MUDO' : 'SOM');
   somBtn.setAttribute('aria-pressed', m ? 'true' : 'false');
-  somBtn.setAttribute('aria-label', m ? 'Áudio mudo — ativar som' : 'Áudio ligado — silenciar');
+  somBtn.setAttribute('aria-label', en
+    ? (m ? 'Muted — turn sound on' : 'Sound on — mute')
+    : (m ? 'Áudio mudo — ativar som' : 'Áudio ligado — silenciar'));
 }
 if (somBtn) {
   pintarSom(); // reflete o estado salvo no load
@@ -76,4 +70,5 @@ if (somBtn) {
     toggleMuted();
     pintarSom();
   });
+  window.addEventListener('i18n-mudou', pintarSom); // re-traduz ao trocar idioma
 }
