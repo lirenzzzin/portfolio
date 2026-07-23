@@ -1413,9 +1413,9 @@ body[data-webgl="on"] [data-ink="on"] > .ink-text-content{
       window.addEventListener("deviceorientation", function(ev){
         if(ev.gamma == null || ev.beta == null) return;
         /* gamma: inclinação esquerda-direita; beta: frente-trás (45° ≈ segurando o cel) */
-        var nx = Math.max(-1, Math.min(1, ev.gamma / 32));
-        var ny = Math.max(-1, Math.min(1, (ev.beta - 45) / 32));
-        alvoX = nx * MOV_MAX * 1.5; alvoY = ny * MOV_MAX * 1.5; alvoR = nx * ROT_MAX * 1.5;
+        var nx = Math.max(-1, Math.min(1, ev.gamma / 24));
+        var ny = Math.max(-1, Math.min(1, (ev.beta - 45) / 24));
+        alvoX = nx * MOV_MAX * 2.4; alvoY = ny * MOV_MAX * 2.4; alvoR = nx * ROT_MAX * 2.3;
         acordar();
       }, { passive:true });
     }

@@ -64,7 +64,7 @@ function revealBlock(el, onDone) {
     opacity: 1,
     y: 0,
     filter: fromBlur ? 'blur(0px)' : 'none',
-    duration: isMobile ? 0.72 : 0.95,
+    duration: isMobile ? 0.42 : 0.5,
     ease: 'power3.out',
     onComplete: () => {
       gsap.set(el, { clearProps: 'filter,transform,opacity,willChange' });
