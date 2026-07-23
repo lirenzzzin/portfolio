@@ -8,8 +8,8 @@ let assetsPromise = null;
 function loadFontAssets() {
   if (!assetsPromise) {
     assetsPromise = Promise.all([
-      fetch('/font/EBGaramond.json').then((r) => r.json()),
-      new THREE.TextureLoader().loadAsync('/font/ebgaramond.png'),
+      fetch('font/EBGaramond.json').then((r) => r.json()),
+      new THREE.TextureLoader().loadAsync('font/ebgaramond.png'),
     ]).then(([font, atlas]) => {
       atlas.minFilter = THREE.LinearFilter;
       atlas.magFilter = THREE.LinearFilter;

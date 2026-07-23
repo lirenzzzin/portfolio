@@ -9,7 +9,7 @@
 <style>
 @font-face{
   font-family:"EB Garamond";
-  src:url("/font/eb-garamond.woff2") format("woff2");
+  src:url("font/eb-garamond.woff2") format("woff2");
   font-weight:400; font-display:swap;
 }
 
@@ -81,7 +81,7 @@ body::before{
   position:relative;
   z-index:1;
   padding:clamp(1.6rem,3.5vw,3rem) clamp(1.3rem,3.5vw,3rem) 6rem;
-  background:url("/img/fundo.jpg") top left / 100% auto repeat-y, var(--papel);
+  background:url("img/fundo.jpg") top left / 100% auto repeat-y, var(--papel);
   /* máscara de reveal: a frente opaca é --reveal (herdado do wrapper); abaixo, some.
      Default 200% = tudo visível (sem JS / reduced-motion / primeiro viewport). */
   -webkit-mask-image:linear-gradient(to bottom, #000 0, #000 calc(var(--reveal) - 60px), transparent var(--reveal));
@@ -753,7 +753,7 @@ body::before{
   /* cor distinta (--tom) + textura de papel por cima; soft-light preserva a cor e só
      adiciona o grão. --texpos/--texsize variam por card pra a textura não se repetir. */
   background-color:var(--tom);
-  background-image:url("/img/fundo.jpg");
+  background-image:url("img/fundo.jpg");
   background-size:var(--texsize);
   background-position:var(--texpos);
   background-repeat:repeat;   /* tila: cobre o card inteiro, sem emenda onde a textura acabava */
@@ -1021,12 +1021,12 @@ body[data-webgl="on"] [data-ink="on"] > .ink-text-content{
           <span class="frase-chave" data-i18n="id.tese2">Faço as duas. A primeira ensinou a segunda a não confiar em abstração.</span>
         </p>
         <div class="carimbo-ll" aria-hidden="true">
-          <img src="/img/carimbo-portfolio.webp" alt="" width="677" height="369">
+          <img src="img/carimbo-portfolio.webp" alt="" width="677" height="369">
         </div>
       </div>
       <div>
         <figure class="retrato">
-          <img class="retrato-base" src="/img/retrato.jpg" alt="" width="900" height="1341">
+          <img class="retrato-base" src="img/retrato.jpg" alt="" width="900" height="1341">
         </figure>
         <p class="legenda-retrato" data-i18n="id.legenda">L. Linares, 2026</p>
       </div>
@@ -1048,7 +1048,7 @@ body[data-webgl="on"] [data-ink="on"] > .ink-text-content{
             <dd data-i18n="ooc.antes">Um grupo de WhatsApp. As peças chegavam misturadas com conversa e mensagem de ontem; quem entrava depois não via o que já tinha passado. Venda escapava por falta de vitrine, não por falta de interesse.</dd>
           </div>
           <figure class="foto-materia">
-            <img src="/img/foto-oyc.jpeg" alt="" loading="lazy">
+            <img src="img/foto-oyc.jpeg" alt="" loading="lazy">
             <figcaption>
               <a class="abrir" href="https://open-your-closet.vercel.app" data-i18n="rot.abrir">Abrir</a>
             </figcaption>
@@ -1085,7 +1085,7 @@ body[data-webgl="on"] [data-ink="on"] > .ink-text-content{
             <dd data-i18n="cc.antes">Venda por networking presencial e indicação. Funciona, mas não escala e não trabalha enquanto o corretor dorme.</dd>
           </div>
           <figure class="foto-materia">
-            <img src="/img/foto-coutinho.jpeg" alt="" loading="lazy">
+            <img src="img/foto-coutinho.jpeg" alt="" loading="lazy">
             <figcaption>
               <a class="abrir" href="https://hapvida-coutinho.vercel.app" data-i18n="rot.abrir">Abrir</a>
             </figcaption>

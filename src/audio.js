@@ -26,7 +26,7 @@ function loadKeyBuffer() {
   if (!bufferLoading) {
     const c = ensureCtx();
     if (!c) return Promise.resolve(null);
-    bufferLoading = fetch('/audio/typewriter-key.mp3')
+    bufferLoading = fetch('audio/typewriter-key.mp3')
       .then((r) => r.arrayBuffer())
       .then((ab) => c.decodeAudioData(ab))
       .then((buf) => { keyBuffer = buf; return buf; })
@@ -37,7 +37,7 @@ function loadKeyBuffer() {
 
 function ensureMusic() {
   if (!music) {
-    music = new Audio('/audio/trilha-noir.mp3');
+    music = new Audio('audio/trilha-noir.mp3');
     music.loop = true;
     music.volume = 0.14; // baixo
     music.preload = 'auto';
