@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lorenzzo Linares</title>
+<meta name="description" data-i18n="meta.desc" content="Engenharia reversa e frontend. Interfaces para a web construídas por quem sabe o que roda embaixo.">
+<script>document.documentElement.classList.add("js");</script>
+<style>
+@font-face{
+  font-family:"EB Garamond";
+  src:url("/font/eb-garamond.woff2") format("woff2");
+  font-weight:400; font-display:swap;
+}
+
+:root{
+  --papel:#e3dcc9;
+  --papel-alto:#ede7d8;
+  --papel-amarelo:#e6d7a8;
+  --mesa:#f2f0ea;
+  --tinta:#0e0c0a;
+  --tinta-media:#5c564c;
+  --tinta-fraca:#8b8478;
+  --filete:#b3aa9b;
+  --marca:#7a2c1c;
+  --halo:0 0 1px rgba(14,12,10,.5), 0 .5px 2.5px rgba(14,12,10,.22);
+
+  --t-xs:.66rem;
+  --t-sm:.78rem;
+  --t-base:.95rem;
+  --t-lg:1.1rem;
+
+  --dur:180ms;
+  --curva:cubic-bezier(.16,1,.3,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;background-color:var(--mesa);overflow-x:hidden}
+
+body{
+  background-color:transparent;
+  color:var(--tinta);
+  font-family:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  font-size:var(--t-base);
+  line-height:1.6;
+  font-variant-numeric:tabular-nums;
+  min-height:100vh;
+}
+
+/* PAREDE BRANCA REAL: completamente lisa (zero grão). O realismo vem da luz —
+   um degradê suave de cima (mais clara) pra baixo (levemente mais escura),
+   como uma parede iluminada de cima. Nada de textura. */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background:linear-gradient(180deg, #fbfaf8 0%, #f3f1ed 55%, #e9e6e0 100%);
+}
+
+/* WRAPPER da folha: carrega a centralização, o sway (transform) e a SOMBRA projetada.
+   NÃO tem máscara — por isso a sombra não é recortada. O drop-shadow usa a alpha do
+   conteúdo já mascarado (a .pagina interna), então projeta a sombra do formato REVELADO
+   do papel (fisicamente correto). LUZ de cima-à-direita → sombra forte pra baixo-esquerda.
+   O JS anima os offsets no sway. */
+.folha-sombra{
+  max-width:58rem;
+  margin:clamp(1rem,4vw,3rem) auto;
+  transform:translate3d(0,0,0) rotate(0deg);
+  will-change:transform,filter;
+  filter:
+    drop-shadow(-9px 11px 5px rgba(16,13,10,.40))
+    drop-shadow(-30px 36px 26px rgba(16,13,10,.52))
+    drop-shadow(-72px 82px 72px rgba(16,13,10,.40));
+  /* reveal por scroll (var herda pra .pagina): a folha materializa de cima pra baixo */
+  --reveal:200%;
+}
+
+.pagina{
+  position:relative;
+  z-index:1;
+  padding:clamp(1.6rem,3.5vw,3rem) clamp(1.3rem,3.5vw,3rem) 6rem;
+  background:url("/img/fundo.jpg") top left / 100% auto repeat-y, var(--papel);
+  /* máscara de reveal: a frente opaca é --reveal (herdado do wrapper); abaixo, some.
+     Default 200% = tudo visível (sem JS / reduced-motion / primeiro viewport). */
+  -webkit-mask-image:linear-gradient(to bottom, #000 0, #000 calc(var(--reveal) - 60px), transparent var(--reveal));
+  mask-image:linear-gradient(to bottom, #000 0, #000 calc(var(--reveal) - 60px), transparent var(--reveal));
+}
+
+/* ================= Masthead (Jornal) ================= */
+
+.topo{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:1rem;
+  padding:.8rem 0;
+  border-bottom:1px solid var(--filete);
+  font-size:var(--t-xs);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  flex-wrap:wrap;
+}
+
+.idioma{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+}
+/* carimbos: borda dupla de tinta, leve rotação, coerentes com os carimbos de situação */
+.idioma button{
+  position:relative;
+  overflow:hidden;
+  font:inherit;
+  font-size:var(--t-xs);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  background:var(--papel-alto);
+  color:var(--tinta-media);
+  border:2px double var(--tinta);
+  padding:.28rem .62rem;
+  cursor:pointer;
+  transition:background var(--dur) var(--curva),color var(--dur) var(--curva);
+}
+.idioma button[data-lang="pt"]{ transform:rotate(-3deg) }
+.idioma button[data-lang="en"]{ transform:rotate(2.5deg) }
+.idioma button[aria-pressed="true"]{
+  background:var(--tinta);
+  color:var(--papel);
+  text-shadow:var(--halo);
+}
+.idioma button:hover:not([aria-pressed="true"]){ color:var(--tinta) }
+
+/* controles do topo: SOM/MUDO + idioma */
+.topo-controles{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+}
+/* botão SOM/MUDO — mesmo estilo carimbo/orelha */
+.som-btn{
+  font:inherit;
+  font-size:var(--t-xs);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  background:var(--papel-alto);
+  color:var(--tinta-media);
+  border:2px double var(--tinta);
+  padding:.28rem .62rem;
+  cursor:pointer;
+  transform:rotate(-1.5deg);
+  transition:background var(--dur) var(--curva),color var(--dur) var(--curva);
+}
+.som-btn:hover{ color:var(--tinta) }
+/* botão Contato no cabeçalho: mesmo carimbo torto, rola até o final ao clicar */
+.contato-btn{
+  font:inherit;
+  font-size:var(--t-xs);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  background:var(--papel-alto);
+  color:var(--tinta-media);
+  border:2px double var(--tinta);
+  padding:.28rem .62rem;
+  cursor:pointer;
+  transform:rotate(2deg);
+  transition:background var(--dur) var(--curva),color var(--dur) var(--curva);
+}
+.contato-btn:hover{ background:var(--tinta); color:var(--papel) }
+.som-btn[aria-pressed="true"]{   /* mudo */
+  background:var(--tinta);
+  color:var(--papel);
+  text-decoration:line-through;
+}
+
+/* botão replay do hero */
+.replay-hero{
+  display:block;
+  margin:.7rem auto 0;
+  font:inherit;
+  font-size:var(--t-sm);
+  line-height:1;
+  background:transparent;
+  color:var(--tinta-fraca);
+  border:1px solid var(--filete);
+  border-radius:50%;
+  width:1.9rem;
+  height:1.9rem;
+  cursor:pointer;
+  transition:color var(--dur) var(--curva),border-color var(--dur) var(--curva);
+}
+.replay-hero:hover{ color:var(--tinta); border-color:var(--tinta) }
+
+/* splash de tinta ao togglar */
+.idioma button.splash::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:180%;
+  height:180%;
+  border-radius:47% 53% 51% 49% / 52% 48% 52% 48%;
+  background:radial-gradient(circle at 50% 50%, rgba(14,12,10,.85) 0%, rgba(14,12,10,.5) 42%, rgba(14,12,10,0) 70%);
+  transform:translate(-50%,-50%) scale(.15);
+  pointer-events:none;
+  animation:tinta-splash 300ms cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes tinta-splash{
+  0%{ transform:translate(-50%,-50%) scale(.15); opacity:.6 }
+  100%{ transform:translate(-50%,-50%) scale(1.15); opacity:0 }
+}
+
+.identificacao{
+  padding:1.6rem 0 2.5rem;
+}
+
+.masthead{
+  text-align:center;
+  padding:1.8rem 0 1.4rem;
+  margin-top:.6rem;
+  margin-bottom:2rem;
+  border-top:4px double var(--tinta);
+  border-bottom:4px double var(--tinta);
+}
+
+.nome-caixa{
+  position:relative;
+  display:inline-block;
+  margin:0 auto;
+}
+
+.nome{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:clamp(2.5rem,7.5vw,4.5rem);
+  font-weight:400;
+  line-height:.95;
+  letter-spacing:-.03em;
+  margin-bottom:.4rem;
+  text-align:center;
+}
+
+.funcao{
+  font-size:var(--t-xs);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  margin-top:.6rem;
+  text-align:center;
+}
+
+/* ================= Matéria de Capa (Tese + Retrato) ================= */
+
+.capa{
+  display:grid;
+  gap:2rem;
+  padding-bottom:2.5rem;
+  border-bottom:1px solid var(--filete);
+}
+
+@media (min-width:46rem){
+  .capa{
+    grid-template-columns:1fr 0.8fr;
+    gap:3rem;
+    align-items:stretch;   /* colunas com mesma altura: tese acompanha o retrato */
+  }
+  /* coluna esquerda ocupa a altura toda: lede em cima, carimbo no meio, pull-quote embaixo */
+  .capa > div:first-child{
+    display:flex;
+    flex-direction:column;
+  }
+  .capa > div:first-child .tese{ display:contents }
+  .carimbo-ll{ flex:1; order:1; padding:0 }
+  .tese .frase-chave{ order:2 }
+}
+
+/* carimbo LL — a arte do monograma batida na capa */
+.carimbo-ll{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:2.2rem 0;
+  overflow:visible;   /* a borda transparente do carimbo pode sangrar no gap sem tocar o retrato */
+}
+.carimbo-ll img{
+  width:min(128%,40rem);
+  height:auto;
+  opacity:0;
+  transform:rotate(-3deg) scale(2.1);
+  animation:carimbar .55s cubic-bezier(.55,0,.7,.4) 1.5s forwards;
+}
+@keyframes carimbar{
+  0%{ opacity:0; transform:rotate(-3deg) scale(2.1) }
+  55%{ opacity:1; transform:rotate(-7deg) scale(.95) }
+  72%{ transform:rotate(-6.5deg) scale(1.03) }
+  100%{ opacity:.88; transform:rotate(-7deg) scale(1) }
+}
+@media (prefers-reduced-motion:reduce){
+  .carimbo-ll img{ animation:none; opacity:.88; transform:rotate(-7deg) scale(1) }
+}
+
+.tese{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  color:var(--tinta);
+  text-wrap:pretty;
+}
+/* frase 1 — lede de jornal, com capitular (drop cap) */
+.tese > span:first-child{
+  display:block;
+  font-size:clamp(1.3rem,2.4vw,1.9rem);
+  line-height:1.25;
+  letter-spacing:-0.01em;
+  text-shadow:var(--halo);
+}
+.tese > span:first-child::first-letter{
+  float:left;
+  font-size:3.4em;
+  line-height:.72;
+  padding:.02em .1em 0 0;
+  font-weight:400;
+}
+/* frase 2 — pull-quote distinto: menor, itálico, tinta-média, filete curto acima */
+.tese .frase-chave{
+  display:block;
+  margin-top:1.6rem;
+  padding-top:1.1rem;
+  font-size:clamp(1.05rem,1.5vw,1.25rem);
+  font-style:italic;
+  line-height:1.5;
+  letter-spacing:0;
+  color:var(--tinta-media);
+  text-shadow:none;
+}
+.tese .frase-chave::before{
+  content:"";
+  display:block;
+  width:2.6rem;
+  height:2px;
+  margin-bottom:1.1rem;
+  background:var(--tinta);
+}
+
+/* ---------- retrato em meio-tom ---------- */
+
+/* foto de jornal noir — moldura de filete fino, sem meio-tom/moiré */
+.retrato{
+  position:relative;
+  border:1px solid var(--filete);
+  background:var(--papel-alto);
+  max-width:13rem;
+  justify-self:start;
+  overflow:hidden;
+}
+.retrato-base{
+  display:block;
+  width:100%;
+  height:auto;
+  filter:contrast(1.1);   /* foto nova já é P&B de estúdio */
+}
+.legenda-retrato{
+  font-size:var(--t-xs);
+  letter-spacing:.1em;
+  color:var(--tinta-fraca);
+  margin-top:.55rem;
+  max-width:13rem;
+}
+
+@media (min-width:46rem){
+  /* retrato ~44% da capa, mais alto */
+  .retrato{ max-width:none; justify-self:stretch }
+  .legenda-retrato{ max-width:none }
+}
+@media (max-width:46rem){
+  /* capa no mobile: FOTO grande em cima (quase full-width, mas com a borda do papel
+     visível via padding), depois o carimbo, depois a tese */
+  .capa{ display:flex; flex-direction:column; gap:1.3rem }
+  .capa > div{ display:contents }   /* dissolve os wrappers pra ordenar item a item */
+  .capa .retrato{ order:1; max-width:none; width:100%; justify-self:stretch }
+  .capa .retrato-base{ filter:contrast(1.1) }
+  .legenda-retrato{ order:2; max-width:none }
+  .capa .carimbo-ll{ order:3; padding:1rem 0 }
+  .capa .carimbo-ll img{ width:min(78%,17rem) }
+  .capa .tese{ order:4 }
+  /* mobile: margem lateral pra parede + sombra aparecerem ao lado do papel;
+     filtro de sombra em escala menor (o JS mantém a mesma escala no sway) */
+  .folha-sombra{
+    margin:1.2rem 5vw 1.2rem;
+    filter:
+      drop-shadow(-3px 4px 4px rgba(16,13,10,.40))
+      drop-shadow(-10px 12px 12px rgba(16,13,10,.5))
+      drop-shadow(-24px 28px 26px rgba(16,13,10,.38));
+  }
+}
+
+/* ================= Matérias (Projetos) ================= */
+
+.secao{ padding:2.5rem 0 0 }
+
+.cinta{
+  display:flex;
+  align-items:center;
+  gap:.9rem;
+  margin-bottom:2rem;
+  font-size:var(--t-xs);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  transform:rotate(-0.2deg);
+  text-shadow:.5px .4px .2px rgba(122,44,28,.18);
+  filter:contrast(1.05);
+  opacity:.95;
+}
+.cinta::before,
+.cinta::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--filete);
+}
+
+.registro{
+  position:relative;
+  padding:2.2rem 0 2.8rem;
+  border-top:1px solid var(--filete);
+}
+.registro:first-of-type{ border-top:4px double var(--tinta) }
+
+.registro-topo{
+  margin-bottom:1.4rem;
+  padding-right:7.5rem;
+}
+
+.registro h3{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:clamp(1.8rem,4vw,2.8rem);
+  font-weight:400;
+  letter-spacing:-.02em;
+  line-height:1.1;
+}
+
+/* Carimbo de Situação */
+.situacao{
+  position:absolute;
+  top:2rem;
+  right:0;
+  font-size:var(--t-xs);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  border:3px double var(--filete);
+  padding:.22rem .65rem;
+  white-space:nowrap;
+  background:var(--papel-alto);
+  transform:rotate(-3deg);
+  transform-origin:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.05);
+  filter:contrast(1.05);
+}
+.registro:nth-of-type(2) .situacao{
+  transform:rotate(2deg);
+}
+.situacao[data-estado="parcial"]{
+  color:var(--marca);
+  border-color:var(--marca);
+}
+
+/* Corpo da matéria em 2 colunas */
+.materia-corpo{
+  column-count:2;
+  column-gap:2.5rem;
+  column-rule:1px solid var(--filete);
+}
+
+@media (max-width:44rem){
+  .materia-corpo{
+    column-count:1;
+  }
+  .registro-topo{
+    padding-right:0;
+    margin-bottom:1rem;
+  }
+  .situacao{
+    position:relative;
+    top:auto;
+    right:auto;
+    display:inline-block;
+    margin-top:.6rem;
+    margin-bottom:1rem;
+  }
+}
+
+/* foto de imprensa no fluxo das colunas */
+.foto-materia{
+  break-inside:avoid;
+  column-break-inside:avoid;
+  margin:0 0 1.4rem;
+  border:1px solid var(--filete);
+  padding:.4rem;
+  background:var(--papel-alto);
+}
+.foto-materia img{
+  display:block;
+  width:100%;
+  height:auto;
+  filter:grayscale(1) contrast(1.3);
+}
+.foto-materia figcaption{
+  margin-top:.45rem;
+  text-align:right;
+}
+.foto-materia figcaption .abrir{ margin-top:0 }
+
+.campos{
+  display:block;
+}
+
+.campo{
+  break-inside:avoid;
+  column-break-inside:avoid;
+  margin-bottom:1.2rem;
+}
+
+.campo dt{
+  font-size:var(--t-xs);
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  padding-top:.5rem;
+  border-top:1px solid var(--filete);
+  margin-bottom:.3rem;
+  filter:contrast(1.05);
+}
+.campo:nth-of-type(odd) dt{
+  text-shadow:.6px -.4px .2px rgba(122,44,28,.18);
+  opacity:.93;
+}
+.campo:nth-of-type(even) dt{
+  text-shadow:-.5px .5px .2px rgba(20,18,15,.16);
+  opacity:.98;
+}
+.campo:first-child dt{
+  border-top:none;
+  padding-top:0;
+}
+
+.campo dd{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  color:var(--tinta-media);
+  text-wrap:pretty;
+  font-size:1.15rem;
+  line-height:1.55;
+}
+
+/* Anotações no fluxo de colunas */
+.anotacao{
+  break-inside:avoid;
+  column-break-inside:avoid;
+  margin:1.2rem 0;
+  padding:.85rem 0 .85rem 1.1rem;
+  border-left:2px solid var(--marca);
+}
+.anotacao .rotulo{
+  display:block;
+  font-size:var(--t-xs);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--marca);
+  margin-bottom:.4rem;
+  text-shadow:-.4px .5px .2px rgba(122,44,28,.22);
+  filter:contrast(1.05);
+}
+.anotacao p{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:1.15rem;
+  font-style:italic;
+  color:var(--tinta-media);
+  line-height:1.55;
+  text-wrap:pretty;
+}
+
+.abrir{
+  display:inline-block;
+  margin-top:1.5rem;
+  font-size:var(--t-xs);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--tinta);
+  text-decoration:none;
+  border-bottom:1px solid var(--tinta);
+  padding-bottom:3px;
+  transition:opacity var(--dur) var(--curva);
+}
+.abrir:hover{ opacity:.6 }
+.abrir::after{ content:" \2197" }
+
+/* ================= Terreno (conteúdo dos recortes) ================= */
+
+.terreno-titulo{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:1rem;
+  font-size:var(--t-xs);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  margin-bottom:1.6rem;
+  text-align:center;
+  text-shadow:-.5px -.4px .2px rgba(122,44,28,.18);
+  filter:contrast(1.05);
+}
+.terreno-titulo::before,
+.terreno-titulo::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--filete);
+}
+
+.blocos{
+  display:grid;
+  gap:1.6rem;
+}
+@media (min-width:42rem){
+  .blocos{ grid-template-columns:1fr 1fr; gap:2.5rem }
+}
+
+.bloco h4{
+  font-size:var(--t-xs);
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--tinta-fraca);
+  margin-bottom:.8rem;
+  padding-bottom:.5rem;
+  border-bottom:1px solid var(--filete);
+  filter:contrast(1.05);
+}
+.bloco:nth-of-type(odd) h4{
+  text-shadow:.5px .4px .2px rgba(20,18,15,.16);
+  opacity:.92;
+}
+.bloco:nth-of-type(even) h4{
+  text-shadow:-.4px .5px .2px rgba(122,44,28,.18);
+  opacity:.97;
+}
+.bloco ul{ list-style:none }
+.bloco li{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:1.15rem;
+  line-height:1.55;
+  color:var(--tinta-media);
+  padding:.3rem 0;
+  display:grid;
+  grid-template-columns:1.1rem 1fr;
+}
+.bloco li::before{
+  content:"\2014";
+  color:var(--tinta-fraca);
+}
+
+/* ================= Contato (conteúdo dos recortes) ================= */
+
+.colofao{
+  color:var(--tinta);
+  width:2.2rem;
+  height:2.2rem;
+}
+
+.recorte-frase p{
+  font-family:"EB Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-size:1.2rem;
+  line-height:1.5;
+  color:var(--tinta-media);
+  text-align:center;
+  text-wrap:pretty;
+}
+
+.enderecos{
+  display:flex;
+  gap:1.6rem;
+  justify-content:center;
+  flex-wrap:wrap;
+  font-size:var(--t-sm);
+}
+.enderecos a{
+  color:var(--tinta);
+  text-decoration:none;
+  border-bottom:1px solid var(--filete);
+  padding-bottom:2px;
+  transition:border-color var(--dur) var(--curva);
+}
+.enderecos a:hover{ border-color:var(--tinta) }
+
+/* ================= Colagem de recortes de jornal (Terreno + contato) =================
+   Recortes de papel colados uns sobre os outros: tons diferentes, micro-rotações,
+   sombras de sobreposição (drop-shadow segue a borda) e borda de baixo RASGADA
+   (máscara com ruído de turbulência — orgânica, não zigzag). */
+/* seta rabiscada no jornal, apontando pro card de contato (calibrar left/top no browser) */
+.seta-contato{
+  position:absolute;
+  left:34%;
+  bottom:.5rem;
+  width:9rem;
+  color:var(--tinta);
+  pointer-events:none;
+  z-index:3;
+}
+.seta-svg{ width:100%; height:auto; display:block; }
+/* "Contato" a marcador grosso, na traseira (base) da seta */
+.seta-label{
+  position:absolute;
+  left:-2.6rem;
+  bottom:-2.1rem;
+  font-family:Georgia,"EB Garamond",serif;
+  font-weight:700;
+  font-style:italic;
+  font-size:2rem;
+  line-height:1;
+  -webkit-text-stroke:.8px var(--tinta);
+  transform:rotate(-6deg);
+  text-shadow:var(--halo);
+}
+@media (max-width:46rem){ .seta-contato{ display:none } }
+
+.colagem{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  padding:2rem 0 8rem;   /* espaço de jornal embaixo pro rabisco da seta */
+}
+.recorte{
+  --tom:var(--papel);
+  --texpos:center top;   /* posição da textura — variada por card pra não repetir */
+  --texsize:150% auto;
+  position:relative;
+  isolation:isolate;   /* contém o blend do grão dentro do card (não vaza pra parede) */
+  padding:1.8rem 1.6rem 3.2rem;   /* respiro extra embaixo pro rasgo não cortar texto */
+  /* sombra realista, mesma luz da folha (cima-direita → sombra pra baixo-esquerda);
+     drop-shadow acompanha a borda rasgada do recorte */
+  filter:
+    drop-shadow(-4px 6px 5px rgba(16,13,10,.30))
+    drop-shadow(-13px 17px 18px rgba(16,13,10,.26));
+}
+/* a folha de papel do recorte (com borda de baixo rasgada) fica no ::before,
+   pra máscara não recortar o texto */
+.recorte::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  /* cor distinta (--tom) + textura de papel por cima; soft-light preserva a cor e só
+     adiciona o grão. --texpos/--texsize variam por card pra a textura não se repetir. */
+  background-color:var(--tom);
+  background-image:url("/img/fundo.jpg");
+  background-size:var(--texsize);
+  background-position:var(--texpos);
+  background-repeat:repeat;   /* tila: cobre o card inteiro, sem emenda onde a textura acabava */
+  background-blend-mode:soft-light;
+  /* rasgo de profundidade FIXA (48px), independente da altura do recorte:
+     camada 1 = bloco sólido até 46px do fim; camada 2 = faixa de 48px no pé
+     com a borda de baixo rasgada (união das duas máscaras). Nunca corta texto
+     porque o padding-bottom (3.2rem) é maior que o rasgo. */
+  -webkit-mask-image:
+    linear-gradient(#000,#000),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='60' preserveAspectRatio='none'%3E%3Cfilter id='r' x='-20%25' y='-60%25' width='140%25' height='220%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.09' numOctaves='2' seed='4' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26'/%3E%3C/filter%3E%3Crect x='-30' y='-14' width='460' height='56' fill='%23000' filter='url(%23r)'/%3E%3C/svg%3E");
+  mask-image:
+    linear-gradient(#000,#000),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='60' preserveAspectRatio='none'%3E%3Cfilter id='r' x='-20%25' y='-60%25' width='140%25' height='220%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.09' numOctaves='2' seed='4' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='26'/%3E%3C/filter%3E%3Crect x='-30' y='-14' width='460' height='56' fill='%23000' filter='url(%23r)'/%3E%3C/svg%3E");
+  -webkit-mask-position:0 0, 0 100%;
+  mask-position:0 0, 0 100%;
+  -webkit-mask-size:100% calc(100% - 46px), 100% 48px;
+  mask-size:100% calc(100% - 46px), 100% 48px;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+}
+/* grão POR CIMA de tudo (texto incluso): multiply funde texto e papel no mesmo grão,
+   dando a sensação de tinta absorvida no papel — o texto deixa de "flutuar". */
+.recorte::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:160px 160px;
+  mix-blend-mode:multiply;
+  opacity:.5;
+}
+
+/* recortes individuais: tom, rotação, largura e sobreposição */
+.recorte-terreno{
+  --tom:var(--papel);
+  --texpos:left top;
+  --texsize:130% auto;
+  width:84%;
+  align-self:flex-start;
+  transform:rotate(-1deg);
+  z-index:2;
+}
+.recorte-frase{
+  --tom:var(--papel-alto);
+  --texpos:right center;
+  --texsize:200% auto;
+  width:46%;
+  align-self:flex-end;
+  margin-top:-2.4rem;
+  margin-right:3%;
+  transform:rotate(1.8deg);
+  z-index:4;
+}
+.recorte-mono{
+  --tom:var(--papel-amarelo);
+  --texpos:center bottom;
+  --texsize:260% auto;
+  width:6.2rem;
+  align-self:flex-start;
+  margin-left:12%;
+  margin-top:-3rem;
+  padding:1.1rem 1.1rem 1.9rem;
+  transform:rotate(-5deg);
+  z-index:6;
+}
+.recorte-mono .colofao{ width:100%; height:auto; display:block }
+.recorte-flip{
+  --tom:var(--papel-amarelo);
+  --texpos:left bottom;
+  --texsize:180% auto;
+  width:auto;
+  max-width:22rem;
+  align-self:center;
+  margin-top:-1.5rem;
+  padding:2rem 1.8rem 3rem;
+  transform:rotate(2.2deg);
+  z-index:5;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1.2rem;
+}
+.recorte-flip .cubo-cena{ margin-top:0 }
+
+@media (max-width:46rem){
+  /* mobile: recortes quase à largura toda, rotações menores, menos sobreposição */
+  .recorte-terreno{ width:100%; transform:rotate(-.6deg) }
+  .recorte-frase{ width:82%; margin-right:0; align-self:center; transform:rotate(1.2deg) }
+  .recorte-mono{ margin-left:8%; transform:rotate(-4deg) }
+  .recorte-flip{ width:100%; max-width:none; transform:rotate(1.4deg) }
+}
+
+/* fallback textual: só aparece em reduced-motion (e-mail que o cubo estático não mostra) */
+.recorte-flip .enderecos{ display:none }
+
+/* ---------- prisma flip de links (CSS 3D, sem lib) ----------
+   retângulo pequeno tamanho de botão. flip vertical (eixo X), estilo
+   flip-clock: mostra uma face, flipa 90° pra próxima, PAUSA ~2.4s,
+   continua. passo a passo, nunca rotação contínua. */
+.cubo-cena{
+  --w:14rem;              /* largura da placa */
+  --h:2.6rem;             /* altura da placa (tamanho de botão) */
+  perspective:640px;
+  width:var(--w);
+  max-width:100%;
+  height:var(--h);
+  margin-top:1.7rem;
+}
+.cubo{
+  position:relative;
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
+  animation:flip-cubo 12s infinite;   /* 4 passos × 3s (flip curto + pausa) */
+}
+.cubo-cena:hover .cubo,
+.cubo-cena:focus-within .cubo{ animation-play-state:paused }
+
+.face{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5em;
+  background:var(--tinta);          /* tinta escura */
+  color:var(--papel);              /* texto no papel */
+  border:1px solid var(--filete);   /* filete */
+  font-size:var(--t-sm);
+  letter-spacing:.04em;
+  text-decoration:none;
+  backface-visibility:hidden;       /* face virada não intercepta clique */
+  box-shadow:inset 0 0 0 1px rgba(14,12,10,.6);
+}
+.face-ico{
+  width:1em;
+  height:1em;
+  flex:none;               /* ícone do tamanho da linha de texto */
+}
+.face:hover{ color:#fff }
+/* banda de 4 faces ao redor do eixo X: translateZ = metade da altura */
+.face:nth-child(1){ transform:rotateX(0deg)   translateZ(calc(var(--h)/2)) }
+.face:nth-child(2){ transform:rotateX(90deg)  translateZ(calc(var(--h)/2)) }
+.face:nth-child(3){ transform:rotateX(180deg) translateZ(calc(var(--h)/2)) }
+.face:nth-child(4){ transform:rotateX(270deg) translateZ(calc(var(--h)/2)) }
+
+/* cada passo: pausa ~2.4s (20%) mostrando a face, depois flip 90° em ~0.6s (5%) */
+@keyframes flip-cubo{
+  0%,  20%   { transform:rotateX(0deg) }           /* face 1 (GitHub) */
+  25%, 45%   { transform:rotateX(-90deg) }          /* face 2 (e-mail) */
+  50%, 70%   { transform:rotateX(-180deg) }         /* face 3 (Instagram) */
+  75%, 95%   { transform:rotateX(-270deg) }         /* face 4 (LinaWorkflow) */
+  100%       { transform:rotateX(-360deg) }         /* = face 1, loop contínuo */
+}
+
+@media (prefers-reduced-motion:reduce){
+  .cubo{ animation:none; transform:none }   /* parado mostrando a face 1 (GitHub) */
+  .recorte-flip .enderecos{ display:flex }   /* e-mail textual abaixo */
+}
+
+/* tinta preta permanente com halo — todo texto de leitura */
+.campo dd,
+.anotacao p,
+.bloco li,
+.recorte-frase p{
+  color:var(--tinta);
+  text-shadow:var(--halo);
+}
+
+/* anti-FOUC: com JS, os alvos de datilografia ficam ocultos até a escrita começar
+   (o JS torna cada bloco visível ao iniciar o reveal dele). Sem JS, nada some.
+   Reduced-motion não esconde (página estática, sem datilografia). */
+@media (prefers-reduced-motion: no-preference){
+  html.js .tese span,
+  html.js .funcao,
+  html.js .legenda-retrato,
+  html.js .cinta,
+  html.js .situacao,
+  html.js .campo dt,
+  html.js .campo dd,
+  html.js .anotacao .rotulo,
+  html.js .anotacao p,
+  html.js .foto-materia .abrir,
+  html.js .terreno-titulo,
+  html.js .bloco h4,
+  html.js .bloco li,
+  html.js .recorte-frase p{
+    visibility:hidden;
+  }
+}
+
+:focus-visible{
+  outline:2px solid var(--marca);
+  outline-offset:3px;
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{ transition-duration:0ms !important; scroll-behavior:auto }
+  .idioma button.splash::after{ display:none }
+  .pagina{ transform:none !important }
+}
+
+/* impressão de verdade */
+@media print{
+  body{ background:#fff; color:#000 }
+  body::before{ display:none }
+  .idioma{ display:none }
+}
+
+/* ---------- hero e manchetes de tinta (WebGL) ---------- */
+.nome-caixa, [data-ink="on"]{
+  position:relative;
+  display:inline-block; /* caixa encolhe pra largura do texto: o canvas cobre só o nome/manchete */
+}
+.hero-canvas, .ink-canvas{ display:none }
+body[data-webgl="on"] .hero-canvas,
+body[data-webgl="on"] .ink-canvas{
+  display:block;
+  position:absolute;
+  left:-5%; width:110%;       /* sangria pro ruído da tinta não cortar na borda */
+  top:-17.5%; height:135%;
+  pointer-events:none;
+}
+body[data-webgl="on"] .nome-caixa .nome,
+body[data-webgl="on"] [data-ink="on"] > .ink-text-content{
+  opacity:0; /* mantém a caixa no layout e o texto acessível/indexável */
+}
+</style>
+</head>
+<body>
+
+<div id="smooth-wrapper"><div id="smooth-content">
+<div class="folha-sombra">
+<div class="pagina">
+
+  <header class="topo">
+    <span data-i18n="topo.local">Ribeirão Preto — Brasil</span>
+    <div class="topo-controles">
+      <button type="button" class="contato-btn" data-goto-contato data-i18n="topo.contato">Contato</button>
+      <button type="button" class="som-btn" data-audio-toggle aria-pressed="false">SOM</button>
+      <div class="idioma" role="group" data-i18n-label="topo.idiomaLabel" aria-label="Idioma">
+        <button type="button" data-lang="pt" aria-pressed="true" lang="pt-BR">PT</button>
+        <button type="button" data-lang="en" aria-pressed="false" lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="identificacao">
+    <div class="masthead">
+      <div class="nome-caixa">
+        <h1 class="nome">Lorenzzo Linares</h1>
+        <canvas class="hero-canvas" aria-hidden="true"></canvas>
+      </div>
+      <p class="funcao" data-i18n="id.funcao">Engenharia reversa · Frontend</p>
+      <button type="button" class="replay-hero" aria-label="Repetir animação do título">⟲</button>
+    </div>
+
+    <div class="capa">
+      <div>
+        <p class="tese">
+          <span data-i18n="id.tese1">Engenharia reversa e frontend têm o mesmo requisito: entender o comportamento real do sistema, não o documentado.</span>
+          <span class="frase-chave" data-i18n="id.tese2">Faço as duas. A primeira ensinou a segunda a não confiar em abstração.</span>
+        </p>
+        <div class="carimbo-ll" aria-hidden="true">
+          <img src="/img/carimbo-portfolio.webp" alt="" width="677" height="369">
+        </div>
+      </div>
+      <div>
+        <figure class="retrato">
+          <img class="retrato-base" src="/img/retrato.jpg" alt="" width="900" height="1341">
+        </figure>
+        <p class="legenda-retrato" data-i18n="id.legenda">L. Linares, 2026</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2 class="cinta" data-i18n="sec.trabalhos">Trabalhos publicados</h2>
+
+    <article class="registro">
+      <div class="registro-topo">
+        <h3>Open Your Closet</h3>
+        <span class="situacao" data-estado="parcial" data-i18n="ooc.situacao">Em acabamento</span>
+      </div>
+      <div class="materia-corpo">
+        <dl class="campos">
+          <div class="campo">
+            <dt data-i18n="rot.antes">Antes</dt>
+            <dd data-i18n="ooc.antes">Um grupo de WhatsApp. As peças chegavam misturadas com conversa e mensagem de ontem; quem entrava depois não via o que já tinha passado. Venda escapava por falta de vitrine, não por falta de interesse.</dd>
+          </div>
+          <figure class="foto-materia">
+            <img src="/img/foto-oyc.jpeg" alt="" loading="lazy">
+            <figcaption>
+              <a class="abrir" href="https://open-your-closet.vercel.app" data-i18n="rot.abrir">Abrir</a>
+            </figcaption>
+          </figure>
+          <div class="campo">
+            <dt data-i18n="rot.decisao">Decisão</dt>
+            <dd data-i18n="ooc.decisao">Manter a venda onde ela já acontecia e resolver o que faltava em volta. Revenda de luxo fecha na conversa — o comprador quer perguntar sobre procedência, estado, autenticidade. Um checkout tiraria isso. O site virou a vitrine que o grupo não conseguia ser; o WhatsApp continuou sendo o balcão.</dd>
+          </div>
+          <div class="campo">
+            <dt data-i18n="rot.forma">Forma</dt>
+            <dd data-i18n="ooc.forma">Peça de revenda não é produto de prateleira: é item único que já teve dono. Cada uma recebe moldura e passe-partout, em proporções que alternam entre retrato, paisagem e quadrado — parede de galeria, não grade de catálogo. A casa de origem aparece em transparência quando a atenção pousa sobre a peça: sugerida, não estampada.</dd>
+          </div>
+          <div class="campo">
+            <dt data-i18n="rot.toque">Toque</dt>
+            <dd data-i18n="ooc.toque">Hover não existe no celular. Em vez de simular com toque, a revelação segue a posição do card na tela: a marca emerge quando a peça chega ao centro. Atenção é o cursor no desktop e o centro da tela no celular — mesma ideia, gramática de cada um.</dd>
+          </div>
+        </dl>
+        <aside class="anotacao">
+          <span class="rotulo" data-i18n="rot.anotacao">Anotação</span>
+          <p data-i18n="ooc.nota">Ainda não terminei. O catálogo está incompleto e o canonical aponta para o domínio errado. Está aqui como está.</p>
+        </aside>
+      </div>
+    </article>
+
+    <article class="registro">
+      <div class="registro-topo">
+        <h3>Coutinho Corretora</h3>
+        <span class="situacao" data-estado="no-ar" data-i18n="cc.situacao">No ar</span>
+      </div>
+      <div class="materia-corpo">
+        <dl class="campos">
+          <div class="campo">
+            <dt data-i18n="rot.antes">Antes</dt>
+            <dd data-i18n="cc.antes">Venda por networking presencial e indicação. Funciona, mas não escala e não trabalha enquanto o corretor dorme.</dd>
+          </div>
+          <figure class="foto-materia">
+            <img src="/img/foto-coutinho.jpeg" alt="" loading="lazy">
+            <figcaption>
+              <a class="abrir" href="https://hapvida-coutinho.vercel.app" data-i18n="rot.abrir">Abrir</a>
+            </figcaption>
+          </figure>
+          <div class="campo">
+            <dt data-i18n="rot.decisao">Decisão</dt>
+            <dd data-i18n="cc.decisao">Site institucional e gestão de tráfego no Google e Meta Ads. O site não é vitrine, é destino de campanha. Cada chamada abre o WhatsApp com a mensagem já escrita e contextualizada: quem clicou em plano familiar chega falando de plano familiar. O corretor recebe a intenção junto com o contato.</dd>
+          </div>
+          <div class="campo">
+            <dt data-i18n="rot.restricao">Restrição</dt>
+            <dd data-i18n="cc.restricao">Saúde suplementar é regulada pela ANS. Nenhuma afirmação sobre cobertura, prazo ou carência pode passar do que o contrato garante — valor sob consulta, nunca tabela. Isso não é rodapé jurídico: dita o que a página pode prometer.</dd>
+          </div>
+        </dl>
+        <aside class="anotacao">
+          <span class="rotulo" data-i18n="rot.anotacao">Anotação</span>
+          <p data-i18n="cc.nota">O formulário não armazena nada: monta a mensagem e entrega no WhatsApp. Saiu assim por simplicidade, e só depois percebi que era também a resposta certa para a LGPD. Dado que não existe não vaza.</p>
+        </aside>
+      </div>
+    </article>
+  </section>
+
+  <section class="secao colagem" id="contato">
+    <div class="recorte recorte-terreno">
+      <h2 class="terreno-titulo" data-i18n="sec.terreno">Terreno</h2>
+      <div class="blocos">
+        <div class="bloco">
+          <h4 data-i18n="ter.superficie">Superfície</h4>
+          <ul>
+            <li data-i18n="ter.s1">Interface e arquitetura de informação</li>
+            <li data-i18n="ter.s2">Animação ligada a scroll e a estado, sem biblioteca</li>
+            <li data-i18n="ter.s3">Tipografia, hierarquia e composição</li>
+            <li data-i18n="ter.s4">Acessibilidade e paridade real entre celular e desktop</li>
+            <li data-i18n="ter.s5">Motion design: coreografia, easing e ritmo — nada entra na tela por acaso</li>
+            <li data-i18n="ter.s6">WebGL e shaders na interface: texto, textura, luz</li>
+            <li data-i18n="ter.s7">Sistemas de design: tokens, tema e internacionalização</li>
+            <li data-i18n="ter.s8">60fps como requisito, não como meta</li>
+          </ul>
+        </div>
+        <div class="bloco">
+          <h4 data-i18n="ter.profundidade">Profundidade</h4>
+          <ul>
+            <li data-i18n="ter.p1">Engenharia reversa e análise de binário</li>
+            <li data-i18n="ter.p2">Internals de Windows e Linux</li>
+            <li data-i18n="ter.p3">Red-team de modelos de linguagem</li>
+            <li data-i18n="ter.p4">Pesquisa em segurança e análise de exploit</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="recorte recorte-frase">
+      <p data-i18n="rod.texto">Aberto a projetos de loja, produto e site institucional. Resposta em até um dia útil.</p>
+    </div>
+
+    <div class="recorte recorte-mono">
+      <svg class="colofao" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32" role="img" aria-label="Monograma LL">
+        <g fill="currentColor" fill-rule="evenodd">
+          <polygon points="10,18 26,18 26,74 82,74 82,90 10,90"/>
+          <polygon points="90,82 74,82 74,26 18,26 18,10 90,10"/>
+        </g>
+      </svg>
+    </div>
+
+    <footer class="recorte recorte-flip">
+      <div class="cubo-cena">
+        <div class="cubo">
+          <a class="face" href="https://github.com/lirenzzzin" rel="me">
+            <svg class="face-ico" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 012-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            <span>github.com/lirenzzzin</span>
+          </a>
+          <a class="face" href="mailto:lorenzzolinares@proton.me">
+            <svg class="face-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V6a1 1 0 011-1zm1.4 2L12 11.6 19.6 7H4.4zM20 8.9l-8 4.9-8-4.9V17h16V8.9z"/></svg>
+            <span>lorenzzolinares@proton.me</span>
+          </a>
+          <a class="face" href="https://instagram.com/lorenzzkkk" rel="me">
+            <svg class="face-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.2c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23a3.7 3.7 0 01-.9 1.38 3.7 3.7 0 01-1.38.9c-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.21 15.58 2.2 15.2 2.2 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.21 8.8 2.2 12 2.2zm0 1.8c-3.15 0-3.5.01-4.75.07-.9.04-1.38.19-1.7.32-.43.17-.73.36-1.05.68-.32.32-.51.62-.68 1.05-.13.32-.28.8-.32 1.7C3.21 8.5 3.2 8.85 3.2 12s.01 3.5.07 4.75c.04.9.19 1.38.32 1.7.17.43.36.73.68 1.05.32.32.62.51 1.05.68.32.13.8.28 1.7.32 1.25.06 1.6.07 4.75.07s3.5-.01 4.75-.07c.9-.04 1.38-.19 1.7-.32.43-.17.73-.36 1.05-.68.32-.32.51-.62.68-1.05.13-.32.28-.8.32-1.7.06-1.25.07-1.6.07-4.75s-.01-3.5-.07-4.75c-.04-.9-.19-1.38-.32-1.7a2.8 2.8 0 00-.68-1.05 2.8 2.8 0 00-1.05-.68c-.32-.13-.8-.28-1.7-.32C15.5 4.01 15.15 4 12 4zm0 3.05A4.95 4.95 0 1112 17a4.95 4.95 0 010-9.9zm0 1.8a3.15 3.15 0 100 6.3 3.15 3.15 0 000-6.3zm6.3-.15a1.15 1.15 0 11-2.3 0 1.15 1.15 0 012.3 0z"/></svg>
+            <span>instagram.com/lorenzzkkk</span>
+          </a>
+          <div class="face face-marca">
+            <svg class="face-ico face-ico-marca" viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd"><polygon points="10,18 26,18 26,74 82,74 82,90 10,90"/><polygon points="90,82 74,82 74,26 18,26 18,10 90,10"/></g></svg>
+            <span>LinaWorkflow</span>
+          </div>
+        </div>
+      </div>
+      <div class="enderecos">
+        <a href="mailto:lorenzzolinares@proton.me">lorenzzolinares@proton.me</a>
+      </div>
+    </footer>
+
+    <!-- rabisco grosso a marcador no jornal, varrendo pra cima-direita até o card -->
+    <div class="seta-contato" aria-hidden="true">
+      <span class="seta-label" data-i18n="seta.contato">Contato</span>
+      <svg class="seta-svg" viewBox="0 0 200 170" fill="none" stroke="currentColor"
+           stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+        <!-- corpo: várias passadas sobrepostas de marcador (traço trêmulo, ponta partida) -->
+        <path d="M12 158 C 54 150, 78 156, 108 120 S 156 62, 182 40"/>
+        <path d="M16 152 C 58 145, 82 150, 112 116 S 158 58, 184 36" stroke-width="5" opacity=".85"/>
+        <path d="M20 162 C 60 154, 86 160, 116 124 S 160 66, 186 44" stroke-width="4.2" opacity=".7"/>
+        <path d="M14 156 C 56 149, 80 153, 110 118 S 157 60, 183 38" stroke-width="3" opacity=".5"/>
+        <!-- ponta: duas farpas grossas e tortas -->
+        <path d="M182 40 C 166 40, 156 42, 146 50"/>
+        <path d="M182 40 C 180 56, 181 66, 176 78"/>
+      </svg>
+    </div>
+  </section>
+
+</div>
+</div><!-- /folha-sombra -->
+
+</div></div><!-- /smooth -->
+<script>
+(function(){
+  "use strict";
+
+  var dicionario = {
+    en: {
+      "meta.desc": "Reverse engineering and frontend. Web interfaces built by someone who knows what runs underneath.",
+      "topo.local": "Ribeirão Preto — Brazil",
+      "topo.idiomaLabel": "Language",
+      "topo.contato": "Contact",
+      "seta.contato": "Contact",
+      "id.funcao": "Reverse engineering · Frontend",
+      "id.tese1": "Reverse engineering and frontend share one requirement: understand how the system actually behaves, not how it is documented.",
+      "id.tese2": "I do both. The first taught the second not to trust abstraction.",
+      "id.legenda": "L. Linares, 2026",
+      "sec.trabalhos": "Published work",
+      "sec.terreno": "Ground covered",
+      "rot.antes": "Before",
+      "rot.decisao": "Decision",
+      "rot.forma": "Form",
+      "rot.toque": "Touch",
+      "rot.restricao": "Constraint",
+      "rot.anotacao": "Note",
+      "rot.abrir": "Open",
+      "ooc.situacao": "Unfinished",
+      "ooc.antes": "A WhatsApp group. Pieces arrived tangled with conversation and yesterday's messages; anyone joining later never saw what had already passed. Sales were lost for lack of a shopfront, not lack of interest.",
+      "ooc.decisao": "Keep the sale where it already happened and fix what was missing around it. Luxury resale closes in conversation — the buyer wants to ask about provenance, condition, authenticity. A checkout would strip that away. The site became the shopfront the group could never be; WhatsApp stayed the counter.",
+      "ooc.forma": "A resale piece is not shelf stock: it is a single object that already had an owner. Each one gets a frame and a mat, in proportions alternating between portrait, landscape and square — gallery wall, not product grid. The house of origin surfaces in transparency when attention lands on the piece: implied, not stamped.",
+      "ooc.toque": "Hover does not exist on a phone. Rather than fake it with a tap, the reveal follows the card's position on screen: the mark emerges as the piece reaches the centre. Attention is the cursor on desktop and the centre of the screen on mobile — same idea, each in its own grammar.",
+      "ooc.nota": "Still unfinished. The catalogue is incomplete and the canonical points at the wrong domain. It is here as it is.",
+      "cc.situacao": "Live",
+      "cc.antes": "Sales through in-person networking and referral. It works, but it does not scale and it does not run while the broker sleeps.",
+      "cc.decisao": "An institutional site plus paid traffic on Google and Meta Ads. The site is not a shopfront, it is a campaign destination. Every call to action opens WhatsApp with the message already written and in context: whoever clicked family plan arrives talking about family plans. The broker receives the intent along with the contact.",
+      "cc.restricao": "Private health insurance is regulated by the ANS. No claim about coverage, waiting period or activation may exceed what the contract guarantees — quoted on request, never a price table. This is not legal boilerplate: it dictates what the page is allowed to promise.",
+      "cc.nota": "The form stores nothing: it assembles the message and hands it to WhatsApp. That came out of simplicity, and only later did I notice it was also the right answer for data protection. Data that does not exist cannot leak.",
+      "ter.superficie": "Surface",
+      "ter.s1": "Interface and information architecture",
+      "ter.s2": "Scroll- and state-driven animation, no library",
+      "ter.s3": "Typography, hierarchy and composition",
+      "ter.s4": "Accessibility and real parity between phone and desktop",
+      "ter.s5": "Motion design: choreography, easing and rhythm — nothing enters the screen by accident",
+      "ter.s6": "WebGL and shaders in the interface: text, texture, light",
+      "ter.s7": "Design systems: tokens, theming and internationalization",
+      "ter.s8": "60fps as a requirement, not a goal",
+      "ter.profundidade": "Depth",
+      "ter.p1": "Reverse engineering and binary analysis",
+      "ter.p2": "Windows and Linux internals",
+      "ter.p3": "Language model red-teaming",
+      "ter.p4": "Security research and exploit analysis",
+      "rod.texto": "Open to shop, product and institutional site work. Reply within one business day."
+    }
+  };
+
+  var original = {};
+  var alvos = document.querySelectorAll("[data-i18n]");
+  var i;
+  for(i=0;i<alvos.length;i++){
+    original[alvos[i].getAttribute("data-i18n")] = alvos[i].textContent;
+  }
+  var metaEl = document.querySelector('meta[name="description"]');
+  original["meta.desc"] = metaEl ? metaEl.getAttribute("content") : "";
+
+  var botoes = document.querySelectorAll(".idioma button");
+
+  function aplicar(lang){
+    var tabela = lang === "en" ? dicionario.en : original;
+    var j, el, chave, txt;
+    for(j=0;j<alvos.length;j++){
+      el = alvos[j];
+      chave = el.getAttribute("data-i18n");
+      txt = lang === "en" ? tabela[chave] : original[chave];
+      if(typeof txt === "string"){ el.textContent = txt; }
+    }
+    if(metaEl){
+      metaEl.setAttribute("content", lang === "en" ? dicionario.en["meta.desc"] : original["meta.desc"]);
+    }
+    document.documentElement.lang = lang === "en" ? "en" : "pt-BR";
+    document.title = "Lorenzzo Linares";
+
+    var grupo = document.querySelector(".idioma");
+    if(grupo){
+      grupo.setAttribute("aria-label", lang === "en" ? "Language" : "Idioma");
+    }
+
+    for(j=0;j<botoes.length;j++){
+      botoes[j].setAttribute("aria-pressed", botoes[j].getAttribute("data-lang") === lang ? "true" : "false");
+    }
+    try{ localStorage.setItem("lang", lang); }catch(e){}
+  }
+
+  for(i=0;i<botoes.length;i++){
+    botoes[i].addEventListener("click", function(){
+      /* CRÍTICO: mata/reverte splits ativos ANTES de trocar textContent,
+         senão os spans da datilografia quebram o i18n */
+      if(window.__killSplits){ window.__killSplits(); }
+      aplicar(this.getAttribute("data-lang"));
+      /* splash de tinta — reinicia a animação a cada toggle */
+      var btn = this;
+      btn.classList.remove("splash");
+      void btn.offsetWidth;
+      btn.classList.add("splash");
+      setTimeout(function(){ btn.classList.remove("splash"); }, 340);
+    });
+  }
+
+  var salvo = null;
+  try{ salvo = localStorage.getItem("lang"); }catch(e){}
+  if(!salvo){
+    salvo = (navigator.language || "pt").toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
+  }
+  if(salvo === "en"){ aplicar("en"); }
+
+  /* ---------------------------------------------------------------
+     folha (.pagina): reveal por scroll + sway com sombra animada
+
+     - reveal: abaixo do primeiro viewport a folha se materializa de
+       cima pra baixo (máscara cuja frente segue o scroll, à frente do
+       texto). desktop e touch. reduced-motion: folha inteira estática.
+     - sway (só ponteiro fino): o mouse inclina/desloca a folha de leve
+       e a SOMBRA desloca/estica no sentido OPOSTO, como papel levantado.
+  --------------------------------------------------------------- */
+
+  /* o wrapper .folha-sombra carrega transform (sway) + drop-shadow (sombra projetada)
+     + a var --reveal (que herda pra .pagina onde a máscara a consome). Sombra e papel
+     se movem juntos, e a sombra não é recortada porque o wrapper não tem máscara. */
+  var folha = document.querySelector(".folha-sombra");
+  if(!folha) return;
+
+  var quieto = window.matchMedia("(prefers-reduced-motion: reduce)");
+  if(quieto.matches) return; /* reduced: folha inteira, sem reveal nem sway */
+
+  var paginaTop = folha.offsetTop;
+
+  /* ---- reveal por scroll (desktop + touch) ---- */
+  /* a folha só MATERIALIZA (nunca desmaterializa): a frente de reveal é travada no
+     máximo já atingido. Descer revela mais; subir não re-esconde (sem neblina ao subir). */
+  var revelMax = 0;
+  function atualizarReveal(){
+    var vh = window.innerHeight;
+    var docH = document.documentElement.scrollHeight;
+    var frente;
+    if(window.scrollY + vh >= docH - 4){
+      /* no fim da página: revela tudo (último recorte não fica esmaecido) */
+      frente = folha.offsetHeight + 400;
+    }else{
+      /* primeiro viewport sempre inteiro (1.35vh); daí pra baixo a frente segue o
+         scroll com folga (+140px) pra folha materializar ANTES de entrar na tela —
+         a faixa de dissolução fica quase fora da vista (neblina discreta) */
+      frente = Math.max(vh * 1.35, window.scrollY + vh + 140) - paginaTop;
+    }
+    revelMax = Math.max(revelMax, frente);   /* trava: só cresce */
+    folha.style.setProperty("--reveal", Math.max(0, revelMax).toFixed(0) + "px");
+  }
+
+  var fino = window.matchMedia("(hover: hover) and (pointer: fine)");
+  var mob  = window.matchMedia("(max-width: 46rem)").matches;
+
+  /* ---- sway + sombra animada ---- */
+  var ROT_MAX = 0.15, MOV_MAX = 3;
+  /* no mobile a folha quase preenche a tela e a sombra que vaza é cortada pelo
+     overflow-x:hidden — reduz a escala da sombra pra ela caber na margem e aparecer */
+  var sw = mob ? 0.34 : 1;
+  var alvoX = 0, alvoY = 0, alvoR = 0;
+  var curX = 0, curY = 0, curR = 0;
+  var rodando = false;
+
+  /* LUZ fixa de cima-à-direita: sombra projetada pra baixo-esquerda, forte. O sway
+     soma deslocamento, então a sombra "respira" junto do papel. drop-shadow (a folha
+     tem máscara de reveal — box-shadow seria recortado). */
+  function pintarSombra(){
+    var lx1 = (-9 - curX * 4) * sw,   ly1 = (11 - curY * 4) * sw;
+    var lx2 = (-30 - curX * 10) * sw, ly2 = (36 - curY * 10) * sw;
+    var lx3 = (-72 - curX * 18) * sw, ly3 = (82 - curY * 18) * sw;
+    var b1 = 5 * sw + 2, b2 = 26 * sw, b3 = 72 * sw;
+    folha.style.filter =
+      "drop-shadow(" + lx1.toFixed(1) + "px " + ly1.toFixed(1) + "px " + b1.toFixed(1) + "px rgba(16,13,10,.40)) " +
+      "drop-shadow(" + lx2.toFixed(1) + "px " + ly2.toFixed(1) + "px " + b2.toFixed(1) + "px rgba(16,13,10,.52)) " +
+      "drop-shadow(" + lx3.toFixed(1) + "px " + ly3.toFixed(1) + "px " + b3.toFixed(1) + "px rgba(16,13,10,.40))";
+  }
+  pintarSombra(); /* aplica a escala já no repouso (mobile: sombra menor que a do CSS) */
+
+  function escrever(){
+    curX += (alvoX - curX) * 0.06;
+    curY += (alvoY - curY) * 0.06;
+    curR += (alvoR - curR) * 0.06;
+
+    folha.style.transform =
+      "translate3d(" + curX.toFixed(3) + "px," + curY.toFixed(3) + "px,0) rotate(" + curR.toFixed(4) + "deg)";
+    pintarSombra();
+
+    if(Math.abs(alvoX - curX) > 0.01 || Math.abs(alvoY - curY) > 0.01 || Math.abs(alvoR - curR) > 0.0005){
+      requestAnimationFrame(escrever);
+    }else{
+      rodando = false;
+    }
+  }
+  function acordar(){ if(!rodando){ rodando = true; requestAnimationFrame(escrever); } }
+
+  if(fino.matches){
+    /* desktop: mouse controla o parallax */
+    window.addEventListener("pointermove", function(ev){
+      var nx = (ev.clientX / window.innerWidth) * 2 - 1;
+      var ny = (ev.clientY / window.innerHeight) * 2 - 1;
+      alvoX = nx * MOV_MAX; alvoY = ny * MOV_MAX; alvoR = nx * ROT_MAX;
+      acordar();
+    }, { passive:true });
+    window.addEventListener("pointerleave", function(){
+      alvoX = 0; alvoY = 0; alvoR = 0; acordar();
+    }, { passive:true });
+  } else if(typeof DeviceOrientationEvent !== "undefined"){
+    /* mobile: giroscópio controla o parallax (inclinar o aparelho balança o papel) */
+    var giroLigado = false;
+    function ligarGiro(){
+      if(giroLigado) return; giroLigado = true;
+      window.addEventListener("deviceorientation", function(ev){
+        if(ev.gamma == null || ev.beta == null) return;
+        /* gamma: inclinação esquerda-direita; beta: frente-trás (45° ≈ segurando o cel) */
+        var nx = Math.max(-1, Math.min(1, ev.gamma / 32));
+        var ny = Math.max(-1, Math.min(1, (ev.beta - 45) / 32));
+        alvoX = nx * MOV_MAX * 1.5; alvoY = ny * MOV_MAX * 1.5; alvoR = nx * ROT_MAX * 1.5;
+        acordar();
+      }, { passive:true });
+    }
+    if(typeof DeviceOrientationEvent.requestPermission === "function"){
+      /* iOS 13+: precisa de permissão liberada por um gesto do usuário */
+      var pedirGiro = function(){
+        DeviceOrientationEvent.requestPermission()
+          .then(function(res){ if(res === "granted") ligarGiro(); })
+          .catch(function(){});
+      };
+      window.addEventListener("pointerdown", pedirGiro, { once:true });
+      window.addEventListener("touchend", pedirGiro, { once:true });
+    } else {
+      /* Android e outros: liga direto */
+      ligarGiro();
+    }
+  }
+
+  /* scroll: atualiza o reveal (rAF-throttled) */
+  var pedido = false;
+  window.addEventListener("scroll", function(){
+    if(pedido) return;
+    pedido = true;
+    requestAnimationFrame(function(){ pedido = false; atualizarReveal(); });
+  }, { passive:true });
+  window.addEventListener("resize", function(){ paginaTop = folha.offsetTop; atualizarReveal(); }, { passive:true });
+  atualizarReveal();
+})();
+</script>
+<script type="module" src="/src/main.js"></script>
+
+</body>
+</html>

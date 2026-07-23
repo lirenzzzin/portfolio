@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Lorenzzo Linares">
+  <g fill="currentColor" fill-rule="evenodd">
+    <!-- L inferior-esquerdo -->
+    <polygon points="10,18 26,18 26,74 82,74 82,90 10,90"/>
+    <!-- L superior-direito (o mesmo L girado 180°) -->
+    <polygon points="90,82 74,82 74,26 18,26 18,10 90,10"/>
+  </g>
+</svg>
